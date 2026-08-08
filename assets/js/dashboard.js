@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Actualizar el saludo y Navbar del Dashboard
+  // Actualizar el saludo del Dashboard
   document.getElementById("saludoUsuario").innerText =
     `¡Bienvenido, ${sesionActiva.nombre} ${sesionActiva.apellido}!`;
 
@@ -14,14 +14,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const dashCiudadano = document.getElementById("dashCiudadano");
   const dashRepresentante = document.getElementById("dashRepresentante");
 
-  // 2. DATA DE CONTROL (Cursos e Inscripciones simuladas)
+  // 2. DATA DE CONTROL (Cursos e Inscripciones)
   const listaCursos = JSON.parse(localStorage.getItem("cursos")) || [];
 
   // Inicializamos un arreglo de inscripciones simuladas en LocalStorage si no existe
   if (!localStorage.getItem("inscripciones")) {
     const inscripcionesIniciales = [
-      { id: 1, usuarioId: 2, cursoId: 1, estado: "Cursando" }, // Francisco Martinez en Curso Prog.
-      { id: 2, usuarioId: 2, cursoId: 2, estado: "Finalizado" }, // Francisco Martinez en Ciberestafas
+      { id: 1, usuarioId: 2, cursoId: 1, estado: "Cursando" },
+      { id: 2, usuarioId: 2, cursoId: 2, estado: "Finalizado" },
     ];
     localStorage.setItem(
       "inscripciones",
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const listaInscripciones = JSON.parse(localStorage.getItem("inscripciones"));
 
   // =================================================================
-  // FLUX EN BASE AL ROL DEL USUARIO
+  // FLUJO EN BASE AL ROL DEL USUARIO
   // =================================================================
   if (sesionActiva.rol === "ciudadano") {
     dashCiudadano.classList.remove("d-none");
@@ -72,7 +72,6 @@ function cargarPanelCiudadano(usuario, cursos, inscripciones) {
     if (curso) {
       const esFinalizado = ins.estado === "Finalizado";
 
-      // Si está finalizado habilitamos botón verde, sino deshabilitado
       const botonCertificado = esFinalizado
         ? `<button class="btn btn-sm btn-success" onclick="descargarCertificado('${curso.nombre}')"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</button>`
         : `<button class="btn btn-sm btn-secondary" disabled><i class="bi bi-lock-fill"></i> Pendiente</button>`;
@@ -93,7 +92,6 @@ function cargarPanelCiudadano(usuario, cursos, inscripciones) {
   });
 }
 
-// Simulación de descarga de PDF exigida por la lógica del negocio
 function descargarCertificado(nombreCurso) {
   alert(
     `Descargando Certificado de aprobación en formato PDF para:\n"${nombreCurso}"\n\n(Funcionalidad simulada mediante descarga de flujo binario local)`,
@@ -104,15 +102,13 @@ function descargarCertificado(nombreCurso) {
 // FUNCIONES MÓDULO: REPRESENTANTE
 // =================================================================
 function cargarPanelRepresentante(usuario, cursos, inscripciones) {
-  // Filtrar los cursos que dicta la institución de este representante
-  // (Asumimos por defecto "Subsecretaría de Empleo" basado en tu Diego Riveros)
   const miInstitucion = usuario.nombreInstitucion || "Subsecretaría de Empleo";
   const misCursosOfertados = cursos.filter(
     (c) =>
       c.institucion.toLowerCase() === miInstitucion.toLowerCase() || c.id <= 2,
   );
 
-  // 1. Calcular y renderizar Métricas Críticas (Esto suma muchísimos puntos)
+  // 1. Calcular y renderizar Métricas Críticas
   const totalAlumnosInscritos = inscripciones.filter((ins) =>
     misCursosOfertados.some((c) => c.id === ins.cursoId),
   ).length;
@@ -154,7 +150,7 @@ function cargarPanelRepresentante(usuario, cursos, inscripciones) {
     </div>
   `;
 
-  // 2. Renderizar tabla de cursos gestionados
+  // 2. Renderizar tabla de cursos gestionados redireccionando de manera dinámica
   const tablaCursos = document.getElementById("tablaCursosRepresentante");
   tablaCursos.innerHTML = "";
 
@@ -169,42 +165,11 @@ function cargarPanelRepresentante(usuario, cursos, inscripciones) {
         <td><span class="badge bg-secondary">${curso.cupoMaximo} Vacantes</span></td>
         <td><span class="badge bg-info text-dark fw-bold">${totalInscritosCurso} Alumnos</span></td>
         <td>
-          <button class="btn btn-sm btn-dark" onclick="verAlumnosInscritos(${curso.id}, '${curso.nombre}')">
+          <a href="alumnos_x_curso.html?id=${curso.id}" class="btn btn-sm btn-dark">
             <i class="bi bi-eye-fill"></i> Ver Alumnos
-          </button>
+          </a>
         </td>
       </tr>
     `;
   });
-}
-
-// 3. Ver alumnos inscritos y sus datos de contacto
-function verAlumnosInscritos(cursoId, nombreCurso) {
-  const inscripciones = JSON.parse(localStorage.getItem("inscripciones")) || [];
-  const usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
-
-  // Buscar qué inscripciones corresponden a este curso
-  const inscritosEnCurso = inscripciones.filter(
-    (ins) => ins.cursoId === cursoId,
-  );
-
-  let mensajeAlumnos = `Alumnos registrados para:\n"${nombreCurso}"\n\n`;
-
-  if (inscritosEnCurso.length === 0) {
-    mensajeAlumnos += "No hay alumnos inscritos en este curso todavía.";
-  } else {
-    inscritosEnCurso.forEach((ins, index) => {
-      const alumno = usuarios.find((u) => u.id === ins.usuarioId);
-      if (alumno) {
-        mensajeAlumnos += `${index + 1}. ${alumno.nombre} ${alumno.apellido}\n`;
-        mensajeAlumnos += `   📧 Correo: ${alumno.email}\n`;
-        mensajeAlumnos += `   🆔 DNI: ${alumno.dni}\n`;
-        mensajeAlumnos += `   📍 Dirección: ${alumno.direccion || "No declarada"}\n`;
-        mensajeAlumnos += `   📊 Estado: ${ins.estado}\n`;
-        mensajeAlumnos += `-------------------------------------------\n`;
-      }
-    });
-  }
-
-  alert(mensajeAlumnos);
 }

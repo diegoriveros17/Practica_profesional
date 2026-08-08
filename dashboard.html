@@ -14,6 +14,45 @@
     />
   </head>
   <body class="d-flex flex-column h-100 bg-light">
+    <header data-bs-theme="dark">
+      <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
+        <div class="container-fluid">
+          <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarsExample11"
+          >
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div
+            class="navbar-collapse d-lg-flex justify-content-between collapse show"
+            id="navbarsExample11"
+          >
+            <!-- Lista de navegación común -->
+            <ul class="navbar-nav fw-bold col-lg-8" id="menuDinamico">
+              <!-- El contenido de aquí adentro se va a generar solo por JavaScript en todas las páginas -->
+            </ul>
+
+            <div class="col-lg-4">
+              <form class="d-flex" role="search" id="formBuscar">
+                <input
+                  class="form-control me-2"
+                  type="search"
+                  placeholder="Buscar"
+                  name="terminoBusqueda"
+                  id="terminoBusqueda"
+                />
+                <button class="btn btn-outline-success" type="submit">
+                  Buscar
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
     <main class="container my-5 pt-5">
       <div
         class="p-4 mb-4 bg-white rounded-3 shadow-sm border-start border-primary border-4"
@@ -106,6 +145,13 @@
       </div>
     </main>
 
+    <footer class="text-white bg-black py-3 mt-auto">
+      <div class="container text-center">
+        <p class="mb-0">&copy; AllCursos 2026</p>
+      </div>
+    </footer>
+
+    <script src="assets/js/navbar.js"></script>
     <script src="assets/js/dashboard.js"></script>
   </body>
 </html>

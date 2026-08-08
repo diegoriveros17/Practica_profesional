@@ -17,19 +17,13 @@
   </head>
   <body class="d-flex flex-column h-100">
     <header data-bs-theme="dark">
-      <nav
-        class="navbar navbar-expand-lg bg-body-tertiary fixed-top"
-        aria-label="Thirteenth navbar example"
-      >
+      <nav class="navbar navbar-expand-lg bg-body-tertiary fixed-top">
         <div class="container-fluid">
           <button
             class="navbar-toggler"
             type="button"
             data-bs-toggle="collapse"
             data-bs-target="#navbarsExample11"
-            aria-controls="navbarsExample11"
-            aria-expanded="true"
-            aria-label="Toggle navigation"
           >
             <span class="navbar-toggler-icon"></span>
           </button>
@@ -37,30 +31,15 @@
             class="navbar-collapse d-lg-flex justify-content-between collapse show"
             id="navbarsExample11"
           >
-            <ul class="navbar-nav fw-bold col-lg-6">
-              <li class="nav-item">
-                <a class="nav-link" aria-current="page" href="index.html"
-                  >Inicio</a
-                >
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="login.html">Iniciar Sesión</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link active" href="formulario_registro.html"
-                  >Registrate</a
-                >
-              </li>
-
-              <li class="nav-item active">
-                <span class="nav-link" id="usuarioNombre"></span>
-              </li>
+            <!-- Lista de navegación común -->
+            <ul class="navbar-nav fw-bold col-lg-8" id="menuDinamico">
+              <!-- El contenido de aquí adentro se va a generar solo por JavaScript en todas las páginas -->
             </ul>
           </div>
         </div>
       </nav>
     </header>
-    r>
+
     <main>
       <section
         class="container-fluid d-flex justify-content-center align-items-center"
@@ -230,6 +209,7 @@
       crossorigin="anonymous"
     ></script>
 
+    <script src="assets/js/navbar.js"></script>
     <script src="assets/js/login.js"></script>
   </body>
 </html>

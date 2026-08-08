@@ -457,43 +457,43 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // --- CONTROL DE SESIÓN EN LA PÁGINA PRINCIPAL ---
-document.addEventListener("DOMContentLoaded", () => {
-  // Intentamos obtener el usuario logueado
-  const sesionActiva = JSON.parse(localStorage.getItem("usuarioLogueado"));
+// document.addEventListener("DOMContentLoaded", () => {
+//   // Intentamos obtener el usuario logueado
+//   const sesionActiva = JSON.parse(localStorage.getItem("usuarioLogueado"));
 
-  // Buscamos los contenedores de los enlaces del navbar en tu HTML
-  // TIP: En tu HTML dales IDs o clases a los <li> de "Iniciar Sesión", "Registrate", etc.
-  const botonLogin = document.querySelector('a[href*="login"]')?.parentElement;
-  const botonRegistro =
-    document.querySelector('a[href*="registro"]')?.parentElement ||
-    document.querySelector('a[href*="Register"]')?.parentElement;
-  const navMenu = document.querySelector(".navbar-nav"); // El contenedor principal de tu menú
+//   // Buscamos los contenedores de los enlaces del navbar en tu HTML
+//   // TIP: En tu HTML dales IDs o clases a los <li> de "Iniciar Sesión", "Registrate", etc.
+//   const botonLogin = document.querySelector('a[href*="login"]')?.parentElement;
+//   const botonRegistro =
+//     document.querySelector('a[href*="registro"]')?.parentElement ||
+//     document.querySelector('a[href*="Register"]')?.parentElement;
+//   const navMenu = document.querySelector(".navbar-nav"); // El contenedor principal de tu menú
 
-  if (sesionActiva && navMenu) {
-    // 1. Ocultamos los botones de Login y Registro si existen
-    if (botonLogin) botonLogin.style.display = "none";
-    if (botonRegistro) botonRegistro.style.display = "none";
+//   if (sesionActiva && navMenu) {
+//     // 1. Ocultamos los botones de Login y Registro si existen
+//     if (botonLogin) botonLogin.style.display = "none";
+//     if (botonRegistro) botonRegistro.style.display = "none";
 
-    // 2. Creamos los elementos para mostrar el usuario y el botón de salir
-    const liUsuario = document.createElement("li");
-    liUsuario.className = "nav-item d-flex align-items-center me-3";
-    liUsuario.innerHTML = `<span class="text-white fw-bold">👋 Hola, ${sesionActiva.nombre} (${sesionActiva.rol})</span>`;
+//     // 2. Creamos los elementos para mostrar el usuario y el botón de salir
+//     const liUsuario = document.createElement("li");
+//     liUsuario.className = "nav-item d-flex align-items-center me-3";
+//     liUsuario.innerHTML = `<span class="text-white fw-bold">👋 Hola, ${sesionActiva.nombre} (${sesionActiva.rol})</span>`;
 
-    const liCerrarSesion = document.createElement("li");
-    liCerrarSesion.className = "nav-item";
-    liCerrarSesion.innerHTML = `<a class="btn btn-sm btn-danger ms-2" id="btnCerrarSesion" href="#">Cerrar Sesión</a>`;
+//     const liCerrarSesion = document.createElement("li");
+//     liCerrarSesion.className = "nav-item";
+//     liCerrarSesion.innerHTML = `<a class="btn btn-sm btn-danger ms-2" id="btnCerrarSesion" href="#">Cerrar Sesión</a>`;
 
-    // 3. Los agregamos al Navbar
-    navMenu.appendChild(liUsuario);
-    navMenu.appendChild(liCerrarSesion);
+//     // 3. Los agregamos al Navbar
+//     navMenu.appendChild(liUsuario);
+//     navMenu.appendChild(liCerrarSesion);
 
-    // 4. Lógica para Cerrar Sesión
-    document
-      .getElementById("btnCerrarSesion")
-      .addEventListener("click", (e) => {
-        e.preventDefault();
-        localStorage.removeItem("usuarioLogueado"); // Borramos solo la sesión activa
-        window.location.reload(); // Recargamos para actualizar el Navbar
-      });
-  }
-});
+//     // 4. Lógica para Cerrar Sesión
+//     document
+//       .getElementById("btnCerrarSesion")
+//       .addEventListener("click", (e) => {
+//         e.preventDefault();
+//         localStorage.removeItem("usuarioLogueado"); // Borramos solo la sesión activa
+//         window.location.reload(); // Recargamos para actualizar el Navbar
+//       });
+//   }
+// });
