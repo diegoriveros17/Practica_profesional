@@ -21,6 +21,16 @@ let usuariosPorDefecto = [
     password: "123456",
     rol: "ciudadano",
   },
+  {
+    id: 3,
+    nombre: "Axel",
+    apellido: "Cardozo",
+    email: "axelcardozo369@gmail.com",
+    dni: "47716820",
+    direccion: "B° San Miguel, Carlos Brunelli",
+    password: "123456",
+    rol: "ciudadano",
+  },
 ];
 
 // Si no hay usuarios guardados en LocalStorage, cargamos los por defecto
