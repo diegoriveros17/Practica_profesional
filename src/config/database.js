@@ -9,16 +9,16 @@ export const sequelize = new Sequelize(
   process.env.DB_PASSWORD,
   {
     host: process.env.DB_HOST,
-    dialect: process.env.DB_DIALECT,
+    dialect: process.env.DB_DIALECT || "mysql",
   },
 );
 
 export const startDB = async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ force: true });
-    console.log("Conexion con la BD establecida");
+    await sequelize.sync({ alter: true }); // Mantiene los registros sin recrear las tablas
+    console.log("Conexión con la BD establecida correctamente.");
   } catch (error) {
-    console.error(`No se pudo conectar con la BD ${error}`);
+    console.error(`No se pudo conectar con la BD: ${error}`);
   }
 };

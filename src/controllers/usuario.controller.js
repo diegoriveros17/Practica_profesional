@@ -12,10 +12,10 @@ export const registrarUsuario = async (req, res) => {
       acepta_notificaciones,
     } = req.body;
 
-    const nuevoUsuario = await Usuario.create(
+    const nuevoUsuario = await UsuarioModel.create(
       {
-        email_login,
-        password_hash: password, // Luego se puede encriptar
+        email,
+        password: password,
         acepta_notificaciones,
         rol_id: 1, // Rol 1 = 'ciudadano'
         persona: {
@@ -25,7 +25,7 @@ export const registrarUsuario = async (req, res) => {
         },
       },
       {
-        include: [{ model: Persona, as: "persona" }],
+        include: [{ model: PersonaModel, as: "persona" }],
       },
     );
 
@@ -45,18 +45,18 @@ export const registrarUsuario = async (req, res) => {
 // Iniciar Sesión (Login)
 export const loginUsuario = async (req, res) => {
   try {
-    const { email_login, password } = req.body;
+    const { email, password } = req.body;
 
-    const usuario = await Usuario.findOne({
-      where: { email_login },
-      include: [{ model: Persona, as: "persona" }],
+    const usuario = await UsuarioModel.findOne({
+      where: { email },
+      include: [{ model: PersonaModel, as: "persona" }],
     });
 
     if (!usuario) {
       return res.status(404).json({ mensaje: "El usuario no existe" });
     }
 
-    if (usuario.password_hash !== password) {
+    if (usuario.password !== password) {
       return res.status(401).json({ mensaje: "Contraseña incorrecta" });
     }
 
@@ -67,6 +67,7 @@ export const loginUsuario = async (req, res) => {
         email: usuario.email_login,
         nombre: usuario.persona.nombre,
         apellido: usuario.persona.apellido,
+        dni: usuario.persona.dni,
       },
     });
   } catch (error) {

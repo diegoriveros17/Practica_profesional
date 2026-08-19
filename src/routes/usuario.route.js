@@ -4,10 +4,10 @@ import {
   loginUsuario,
 } from "../controllers/usuario.controller.js";
 
-export const routerRegistro = Router();
+export const userRouter = Router();
 
 // POST http://localhost:3000/api/usuarios/registro
-routerRegistro.post("/registro", registrarUsuario);
+userRouter.post("/register", registrarUsuario);
 
 // POST http://localhost:3000/api/usuarios/login
-router.post("/login", loginUsuario);
+userRouter.post("/login", loginUsuario);

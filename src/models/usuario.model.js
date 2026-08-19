@@ -1,5 +1,5 @@
 import { DataTypes } from "sequelize";
-import sequelize from "../config/database.js";
+import { sequelize } from "../config/database.js";
 
 export const UsuarioModel = sequelize.define(
   "Usuario",
@@ -9,13 +9,13 @@ export const UsuarioModel = sequelize.define(
       primaryKey: true,
       autoIncrement: true,
     },
-    email_login: {
+    email: {
       type: DataTypes.STRING(150),
       allowNull: false,
       unique: true,
       validate: { isEmail: true },
     },
-    password_hash: {
+    password: {
       type: DataTypes.STRING(255),
       allowNull: false,
     },

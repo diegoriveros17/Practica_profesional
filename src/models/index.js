@@ -1,4 +1,4 @@
-import sequelize from "../config/database.js";
+import { sequelize } from "../config/database.js";
 import { PersonaModel } from "./persona.model.js";
 import { RolModel } from "./rol.model.js";
 import { UsuarioModel } from "./usuario.model.js";

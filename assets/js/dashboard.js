@@ -1,175 +1,186 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. GUARDIÁN DE SEGURIDAD: Controlar acceso
-  const sesionActiva = JSON.parse(localStorage.getItem("usuarioLogueado"));
-  if (!sesionActiva) {
-    window.location.href = "index.html";
+  // 1. Obtener sesión del usuario
+  const usuarioLogueado = JSON.parse(localStorage.getItem("usuarioLogueado"));
+
+  if (!usuarioLogueado) {
+    window.location.href = "login.html";
     return;
   }
 
-  // Actualizar el saludo del Dashboard
-  document.getElementById("saludoUsuario").innerText =
-    `¡Bienvenido, ${sesionActiva.nombre} ${sesionActiva.apellido}!`;
+  console.log("Usuario logueado:", usuarioLogueado);
 
-  // Capturar contenedores principales
-  const dashCiudadano = document.getElementById("dashCiudadano");
-  const dashRepresentante = document.getElementById("dashRepresentante");
+  // 2. Referencias a elementos del DOM (Coincidentes con dashboard.html)
+  const userNombreSpan = document.getElementById("userNombre");
+  const userRolSpan = document.getElementById("userRol");
+  const panelCiudadano = document.getElementById("dashCiudadano");
+  const panelRepresentante = document.getElementById("dashRepresentante"); // <-- Corregido id
+  const btnCerrarSesion = document.getElementById("btnCerrarSesion");
 
-  // 2. DATA DE CONTROL (Cursos e Inscripciones)
-  const listaCursos = JSON.parse(localStorage.getItem("cursos")) || [];
+  const tituloPanel = document.getElementById("saludoUsuario");
+  const bajadaPanel = document.querySelector(
+    ".container.my-5.pt-5 p.text-muted",
+  );
+  const infoPerfilCiudadano = document.getElementById("infoPerfilCiudadano");
 
-  // Inicializamos un arreglo de inscripciones simuladas en LocalStorage si no existe
-  if (!localStorage.getItem("inscripciones")) {
-    const inscripcionesIniciales = [
-      { id: 1, usuarioId: 2, cursoId: 1, estado: "Cursando" },
-      { id: 2, usuarioId: 2, cursoId: 2, estado: "Finalizado" },
-    ];
-    localStorage.setItem(
-      "inscripciones",
-      JSON.stringify(inscripcionesIniciales),
-    );
+  // 3. Renderizar Nombre y Rol en Navbar/Header
+  if (userNombreSpan) {
+    userNombreSpan.textContent =
+      `${usuarioLogueado.nombre || ""} ${usuarioLogueado.apellido || ""}`.trim();
   }
-  const listaInscripciones = JSON.parse(localStorage.getItem("inscripciones"));
 
-  // =================================================================
-  // FLUJO EN BASE AL ROL DEL USUARIO
-  // =================================================================
-  if (sesionActiva.rol === "ciudadano") {
-    dashCiudadano.classList.remove("d-none");
-    cargarPanelCiudadano(sesionActiva, listaCursos, listaInscripciones);
-  } else if (sesionActiva.rol === "representante") {
-    dashRepresentante.classList.remove("d-none");
-    cargarPanelRepresentante(sesionActiva, listaCursos, listaInscripciones);
+  // Extraer el texto del rol (cadena directa o traído de Sequelize)
+  let rolTexto = "";
+  if (typeof usuarioLogueado.rol === "string") {
+    rolTexto = usuarioLogueado.rol;
+  } else if (usuarioLogueado.rol && usuarioLogueado.rol.nombre) {
+    rolTexto = usuarioLogueado.rol.nombre;
+  }
+
+  if (userRolSpan) {
+    userRolSpan.textContent = rolTexto.toUpperCase();
+  }
+
+  // 4. Activar Vistas, Títulos e Información según el Rol
+  const rolMiniscula = rolTexto.toLowerCase();
+
+  if (rolMiniscula === "ciudadano") {
+    if (tituloPanel)
+      tituloPanel.textContent = `¡Hola, ${usuarioLogueado.nombre}!`;
+    if (bajadaPanel)
+      bajadaPanel.textContent =
+        "Bienvenido/a. Desde aquí puedes ver tus inscripciones y gestionar tus cursos.";
+
+    // Cargar datos en la tarjeta "Mis Datos"
+    if (infoPerfilCiudadano) {
+      infoPerfilCiudadano.innerHTML = `
+        <p class="mb-1"><strong>Nombre:</strong> ${usuarioLogueado.nombre} ${usuarioLogueado.apellido}</p>
+        <p class="mb-1"><strong>Email:</strong> ${usuarioLogueado.email}</p>
+        ${usuarioLogueado.dni ? `<p class="mb-1"><strong>DNI:</strong> ${usuarioLogueado.dni}</p>` : ""}
+        ${usuarioLogueado.direccion ? `<p class="mb-1"><strong>Dirección:</strong> ${usuarioLogueado.direccion}</p>` : ""}
+        <span class="badge bg-primary mt-2">Ciudadano</span>
+      `;
+    }
+
+    if (panelCiudadano) panelCiudadano.classList.remove("d-none");
+    if (panelRepresentante) panelRepresentante.classList.add("d-none");
+
+    // Renderizar tabla de inscripciones
+    cargarTablaCiudadano(usuarioLogueado.id);
+  } else if (rolMiniscula === "representante") {
+    if (tituloPanel)
+      tituloPanel.textContent = "Panel Institucional / Representante";
+    if (bajadaPanel)
+      bajadaPanel.textContent =
+        "Bienvenido/a. Desde aquí puedes administrar la oferta de cursos de tu institución.";
+
+    if (panelRepresentante) panelRepresentante.classList.remove("d-none");
+    if (panelCiudadano) panelCiudadano.classList.add("d-none");
+
+    // Renderizar métricas y tabla del representante
+    cargarTablaRepresentante(usuarioLogueado.id);
+  } else {
+    if (tituloPanel) tituloPanel.textContent = "Mi Panel de Control";
+    if (panelCiudadano) panelCiudadano.classList.remove("d-none");
+  }
+
+  // 5. Cerrar Sesión
+  if (btnCerrarSesion) {
+    btnCerrarSesion.addEventListener("click", () => {
+      localStorage.removeItem("usuarioLogueado");
+      window.location.href = "login.html";
+    });
   }
 });
 
-// =================================================================
-// FUNCIONES MÓDULO: CIUDADANO
-// =================================================================
-function cargarPanelCiudadano(usuario, cursos, inscripciones) {
-  // 1. Renderizar perfil izquierdo
-  const infoPerfil = document.getElementById("infoPerfilCiudadano");
-  infoPerfil.innerHTML = `
-    <p class="mb-1"><strong>DNI:</strong> ${usuario.dni}</p>
-    <p class="mb-1"><strong>Email:</strong> ${usuario.email}</p>
-    <p class="mb-1"><strong>Dirección:</strong> ${usuario.direccion || "No especificada"}</p>
-    <p class="mb-0"><strong>Tipo:</strong> Particular</p>
-  `;
+// ==========================================
+// FUNCIONES AUXILIARES DE POBLADO DE TABLAS
+// ==========================================
 
-  // 2. Renderizar tabla de sus cursos
-  const tabla = document.getElementById("tablaInscripcionesCiudadano");
+function cargarTablaCiudadano(usuarioId) {
+  const tbody = document.getElementById("tablaInscripcionesCiudadano");
+  if (!tbody) return;
+
+  const inscripciones = JSON.parse(localStorage.getItem("inscripciones")) || [];
   const misInscripciones = inscripciones.filter(
-    (ins) => ins.usuarioId === usuario.id,
+    (i) => i.usuarioId === usuarioId,
   );
 
   if (misInscripciones.length === 0) {
-    tabla.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No estás inscrito a ningún curso aún.</td></tr>`;
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center text-muted py-3">
+          No estás inscripto en ningún curso actualmente.
+        </td>
+      </tr>`;
     return;
   }
 
-  tabla.innerHTML = "";
-  misInscripciones.forEach((ins) => {
-    const curso = cursos.find((c) => c.id === ins.cursoId);
-    if (curso) {
-      const esFinalizado = ins.estado === "Finalizado";
-
-      const botonCertificado = esFinalizado
-        ? `<button class="btn btn-sm btn-success" onclick="descargarCertificado('${curso.nombre}')"><i class="bi bi-file-earmark-pdf-fill"></i> PDF</button>`
-        : `<button class="btn btn-sm btn-secondary" disabled><i class="bi bi-lock-fill"></i> Pendiente</button>`;
-
-      const badgeEstado = esFinalizado
-        ? `<span class="badge bg-success">Finalizado</span>`
-        : `<span class="badge bg-warning text-dark">Cursando</span>`;
-
-      tabla.innerHTML += `
-        <tr>
-          <td class="fw-bold">${curso.nombre}</td>
-          <td>${curso.institucion}</td>
-          <td>${badgeEstado}</td>
-          <td>${botonCertificado}</td>
-        </tr>
-      `;
-    }
-  });
+  tbody.innerHTML = misInscripciones
+    .map(
+      (item) => `
+    <tr>
+      <td>${item.cursoNombre || "Curso"}</td>
+      <td>${item.institucion || "Institución"}</td>
+      <td><span class="badge bg-success">${item.estado || "Cursando"}</span></td>
+      <td>
+        <button class="btn btn-sm btn-outline-danger">Cancelar</button>
+      </td>
+    </tr>
+  `,
+    )
+    .join("");
 }
 
-function descargarCertificado(nombreCurso) {
-  alert(
-    `Descargando Certificado de aprobación en formato PDF para:\n"${nombreCurso}"\n\n(Funcionalidad simulada mediante descarga de flujo binario local)`,
-  );
-}
+function cargarTablaRepresentante(usuarioId) {
+  const tbody = document.getElementById("tablaCursosRepresentante");
+  const metricas = document.getElementById("metricasRepresentante");
+  if (!tbody) return;
 
-// =================================================================
-// FUNCIONES MÓDULO: REPRESENTANTE
-// =================================================================
-function cargarPanelRepresentante(usuario, cursos, inscripciones) {
-  const miInstitucion = usuario.nombreInstitucion || "Subsecretaría de Empleo";
-  const misCursosOfertados = cursos.filter(
-    (c) =>
-      c.institucion.toLowerCase() === miInstitucion.toLowerCase() || c.id <= 2,
-  );
+  const cursos = JSON.parse(localStorage.getItem("cursos")) || [];
 
-  // 1. Calcular y renderizar Métricas Críticas
-  const totalAlumnosInscritos = inscripciones.filter((ins) =>
-    misCursosOfertados.some((c) => c.id === ins.cursoId),
-  ).length;
-  const metricasContenedor = document.getElementById("metricasRepresentante");
-
-  metricasContenedor.innerHTML = `
-    <div class="col-md-4 mb-3">
-      <div class="card bg-primary text-white shadow-sm border-0">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="text-uppercase mb-1 small">Cursos Activos</h6>
-            <h3 class="mb-0 fw-bold">${misCursosOfertados.length}</h3>
+  if (metricas) {
+    metricas.innerHTML = `
+      <div class="col-md-6">
+        <div class="card bg-primary text-white shadow-sm border-0 mb-3">
+          <div class="card-body">
+            <h6 class="card-title">Total Cursos Publicados</h6>
+            <h3 class="fw-bold mb-0">${cursos.length}</h3>
           </div>
-          <i class="bi bi-mortarboard fs-1 opacity-50"></i>
         </div>
       </div>
-    </div>
-    <div class="col-md-4 mb-3">
-      <div class="card bg-success text-white shadow-sm border-0">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="text-uppercase mb-1 small">Alumnos Totales</h6>
-            <h3 class="mb-0 fw-bold">${totalAlumnosInscritos}</h3>
+      <div class="col-md-6">
+        <div class="card bg-success text-white shadow-sm border-0 mb-3">
+          <div class="card-body">
+            <h6 class="card-title">Total Inscriptos</h6>
+            <h3 class="fw-bold mb-0">0</h3>
           </div>
-          <i class="bi bi-people fs-1 opacity-50"></i>
         </div>
       </div>
-    </div>
-    <div class="col-md-4 mb-3">
-      <div class="card bg-info text-white shadow-sm border-0">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <h6 class="text-uppercase mb-1 small">Institución</h6>
-            <h5 class="mb-0 fw-bold text-truncate" style="max-width: 180px;">${miInstitucion}</h5>
-          </div>
-          <i class="bi bi-building fs-1 opacity-50"></i>
-        </div>
-      </div>
-    </div>
-  `;
-
-  // 2. Renderizar tabla de cursos gestionados redireccionando de manera dinámica
-  const tablaCursos = document.getElementById("tablaCursosRepresentante");
-  tablaCursos.innerHTML = "";
-
-  misCursosOfertados.forEach((curso) => {
-    const totalInscritosCurso = inscripciones.filter(
-      (ins) => ins.cursoId === curso.id,
-    ).length;
-
-    tablaCursos.innerHTML += `
-      <tr>
-        <td class="fw-bold">${curso.nombre}</td>
-        <td><span class="badge bg-secondary">${curso.cupoMaximo} Vacantes</span></td>
-        <td><span class="badge bg-info text-dark fw-bold">${totalInscritosCurso} Alumnos</span></td>
-        <td>
-          <a href="alumnos_x_curso.html?id=${curso.id}" class="btn btn-sm btn-dark">
-            <i class="bi bi-eye-fill"></i> Ver Alumnos
-          </a>
-        </td>
-      </tr>
     `;
-  });
+  }
+
+  if (cursos.length === 0) {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="text-center text-muted py-3">
+          No has publicado ningún curso todavía.
+        </td>
+      </tr>`;
+    return;
+  }
+
+  tbody.innerHTML = cursos
+    .map(
+      (curso) => `
+    <tr>
+      <td>${curso.nombre}</td>
+      <td>${curso.cupoMaximo || 0}</td>
+      <td>0</td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary">Editar</button>
+      </td>
+    </tr>
+  `,
+    )
+    .join("");
 }

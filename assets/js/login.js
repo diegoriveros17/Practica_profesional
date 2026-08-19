@@ -1,95 +1,72 @@
-// 1. Inicializar base de usuarios en LocalStorage (si no existe, usa tus datos por defecto)
-let usuariosPorDefecto = [
-  {
-    id: 1,
-    nombre: "Diego",
-    apellido: "Riveros",
-    email: "diegoriveros1991@gmail.com",
-    dni: "36204965",
-    direccion: "B° Obrero, Salta 1250",
-    password: "123456",
-    rol: "representante",
-    nombreInstitucion: "Subsecretaría de Empleo",
-  },
-  {
-    id: 2,
-    nombre: "Francisco",
-    apellido: "Martinez",
-    email: "fran2mart5@gmail.com",
-    dni: "45600800",
-    direccion: "B° San Miguel, Carlos Brunelli 1536",
-    password: "123456",
-    rol: "ciudadano",
-  },
-];
-
-// Si no hay usuarios guardados en LocalStorage, cargamos los por defecto
-if (!localStorage.getItem("usuarios")) {
-  localStorage.setItem("usuarios", JSON.stringify(usuariosPorDefecto));
-}
-
-// --- GUARDIÁN DE ACCESO: REDIRECCIÓN SI YA INICIÓ SESIÓN ---
+// --- 1. GUARDIÁN DE ACCESO: REDIRECCIÓN SI YA INICIÓ SESIÓN ---
 const usuarioLogueadoActivo = JSON.parse(
   localStorage.getItem("usuarioLogueado"),
 );
 
 if (usuarioLogueadoActivo) {
-  // Si ya hay una sesión en el LocalStorage, lo mandamos directo al inicio
   window.location.href = "index.html";
 }
-// ==========================================================s
 
-// Obtener la lista actualizada de usuarios desde LocalStorage
-const obtenerUsuarios = () => JSON.parse(localStorage.getItem("usuarios"));
-
-// --- LÓGICA DE INICIO DE SESIÓN (LOGIN) ---
+// --- 2. LÓGICA DE INICIO DE SESIÓN CONECTADA A LA API ---
 const formLogin = document.querySelector("#formLogin");
 const msjConfirmacion = document.querySelector("#msjConfirmacion");
 
 if (formLogin) {
-  formLogin.addEventListener("submit", (e) => {
+  formLogin.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const user = formLogin.user.value.trim();
     const password = formLogin.password.value;
-    const listaUsuarios = obtenerUsuarios();
 
-    // Buscamos en el LocalStorage
-    const usuarioEncontrado = listaUsuarios.find((usuario) => {
-      return (
-        (usuario.email === user || String(usuario.dni) === user) &&
-        usuario.password === password
-      );
-    });
+    try {
+      // Petición POST al servidor backend Node.js
+      const respuesta = await fetch("http://localhost:3000/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user, password }),
+      });
 
-    if (usuarioEncontrado) {
-      // GUARDAR EN LOCALSTORAGE EL USUARIO LOGUEADO
-      localStorage.setItem(
-        "usuarioLogueado",
-        JSON.stringify(usuarioEncontrado),
-      );
+      const data = await respuesta.json();
 
-      msjConfirmacion.innerHTML = `
-        <div class="row justify-content-center p-3">
-          <div class="col">
-            <div class="alert alert-success" role="alert">
-              ¡Hola ${usuarioEncontrado.nombre}! Redirigiendo a la página de inicio...
+      if (respuesta.ok) {
+        // Guardamos la sesión devuelta por Sequelize / Node.js
+        localStorage.setItem("usuarioLogueado", JSON.stringify(data.usuario));
+
+        msjConfirmacion.innerHTML = `
+          <div class="row justify-content-center p-3">
+            <div class="col">
+              <div class="alert alert-success" role="alert">
+                ¡Hola ${data.usuario.nombre}! Redirigiendo a la página de inicio...
+              </div>
             </div>
-          </div>
-        </div>`;
+          </div>`;
 
-      const contenedor = document.getElementById("page-container");
-      if (contenedor) contenedor.classList.add("fade-out");
+        const contenedor = document.getElementById("page-container");
+        if (contenedor) contenedor.classList.add("fade-out");
 
-      setTimeout(() => {
-        window.location.href = "index.html";
-      }, 1500);
-    } else {
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1500);
+      } else {
+        // Muestra error si las credenciales son incorrectas
+        msjConfirmacion.innerHTML = `
+          <div class="row justify-content-center p-3">
+            <div class="col">
+              <div class="alert alert-danger" role="alert">
+                ${data.mensaje || "Usuario o contraseña incorrectos"}
+              </div>
+            </div>
+          </div>`;
+      }
+    } catch (error) {
+      console.error("Error de conexión:", error);
       msjConfirmacion.innerHTML = `
         <div class="row justify-content-center p-3">
           <div class="col">
             <div class="alert alert-danger" role="alert">
-              Usuario o clave incorrecta
+              No se pudo conectar con el servidor backend.
             </div>
           </div>
         </div>`;
@@ -97,68 +74,63 @@ if (formLogin) {
   });
 }
 
-// --- LÓGICA DE REGISTRO ---
-// Asegurate de que tu formulario de registro en el HTML tenga id="formRegistro"
-// --- MANEJO DINÁMICO DE LA INTERFAZ DE REGISTRO ---
-// --- MANEJO DINÁMICO CON BOTONES DE SELECCIÓN DE ROL ---
+// --- 3. MANEJO DINÁMICO DE SELECCIÓN DE ROL EN EL REGISTRO ---
 const btnCiudadano = document.getElementById("btnRolCiudadano");
 const btnRepresentante = document.getElementById("btnRolRepresentante");
-const inputOcultoRol = document.getElementById("regRol"); // El input que simula el select
+const inputOcultoRol = document.getElementById("regRol");
 
 const camposFormulario = document.getElementById("camposFormulario");
 const camposCiudadano = document.getElementById("camposCiudadano");
 const camposInstitucion = document.getElementById("camposInstitucion");
 
-// Función reutilizable para activar los estilos y desplegar los campos adecuados
 function seleccionarRol(rol) {
-  // Guardamos el rol en el input oculto para que el submit funcione idéntico
-  inputOcultoRol.value = rol;
+  if (!inputOcultoRol || !camposFormulario) return;
 
-  // Mostramos el contenedor principal de los campos comunes
+  inputOcultoRol.value = rol;
   camposFormulario.classList.remove("d-none");
 
-  // Activamos requeridos comunes
   document.getElementById("nombre").required = true;
   document.getElementById("apellido").required = true;
   document.getElementById("email").required = true;
   document.getElementById("password").required = true;
 
   if (rol === "ciudadano") {
-    // Cambios visuales de los botones (Destacar Ciudadano)
-    btnCiudadano.classList.replace("btn-outline-secondary", "btn-primary");
-    btnCiudadano.classList.add("text-white");
-    btnRepresentante.classList.replace("btn-primary", "btn-outline-secondary");
-    btnRepresentante.classList.remove("text-white");
+    btnCiudadano?.classList.replace("btn-outline-secondary", "btn-primary");
+    btnCiudadano?.classList.add("text-white");
+    btnRepresentante?.classList.replace("btn-primary", "btn-outline-secondary");
+    btnRepresentante?.classList.remove("text-white");
 
-    // Mostrar sección correspondiente
-    camposCiudadano.classList.remove("d-none");
-    camposInstitucion.classList.add("d-none");
+    camposCiudadano?.classList.remove("d-none");
+    camposInstitucion?.classList.add("d-none");
 
-    // Requeridos específicos
-    document.getElementById("dni").required = true;
-    document.getElementById("address").required = true;
-    document.getElementById("institucionNombre").required = false;
-    document.getElementById("cuit").required = false;
+    if (document.getElementById("dni"))
+      document.getElementById("dni").required = true;
+    if (document.getElementById("address"))
+      document.getElementById("address").required = true;
+    if (document.getElementById("institucionNombre"))
+      document.getElementById("institucionNombre").required = false;
+    if (document.getElementById("cuit"))
+      document.getElementById("cuit").required = false;
   } else if (rol === "representante") {
-    // Cambios visuales de los botones (Destacar Representante)
-    btnRepresentante.classList.replace("btn-outline-secondary", "btn-primary");
-    btnRepresentante.classList.add("text-white");
-    btnCiudadano.classList.replace("btn-primary", "btn-outline-secondary");
-    btnCiudadano.classList.remove("text-white");
+    btnRepresentante?.classList.replace("btn-outline-secondary", "btn-primary");
+    btnRepresentante?.classList.add("text-white");
+    btnCiudadano?.classList.replace("btn-primary", "btn-outline-secondary");
+    btnCiudadano?.classList.remove("text-white");
 
-    // Mostrar sección correspondiente
-    camposInstitucion.classList.remove("d-none");
-    camposCiudadano.classList.add("d-none");
+    camposInstitucion?.classList.remove("d-none");
+    camposCiudadano?.classList.add("d-none");
 
-    // Requeridos específicos
-    document.getElementById("institucionNombre").required = true;
-    document.getElementById("cuit").required = true;
-    document.getElementById("dni").required = false;
-    document.getElementById("address").required = false;
+    if (document.getElementById("institucionNombre"))
+      document.getElementById("institucionNombre").required = true;
+    if (document.getElementById("cuit"))
+      document.getElementById("cuit").required = true;
+    if (document.getElementById("dni"))
+      document.getElementById("dni").required = false;
+    if (document.getElementById("address"))
+      document.getElementById("address").required = false;
   }
 }
 
-// Escuchadores de eventos para los botones estéticos
 if (btnCiudadano && btnRepresentante) {
   btnCiudadano.addEventListener("click", () => seleccionarRol("ciudadano"));
   btnRepresentante.addEventListener("click", () =>
@@ -166,88 +138,72 @@ if (btnCiudadano && btnRepresentante) {
   );
 }
 
-// --- LÓGICA DE PROCESAMIENTO DEL REGISTRO ---
+// --- 4. LÓGICA DE REGISTRO ---
 const formRegistro = document.querySelector("#formRegistro");
 const msjRegistro = document.querySelector("#msjRegistro");
 
 if (formRegistro) {
-  formRegistro.addEventListener("submit", (e) => {
+  formRegistro.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const listaUsuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+    // 1. Capturamos el rol guardado en el input oculto por los botones
+    const inputRol = document.getElementById("regRol");
+    const rolElegido = inputRol ? inputRol.value : "";
 
-    // CAPTURA SEGURA DEL ROL DESDE EL SELECT
-    const selectRolElement = document.getElementById("regRol");
-    const rolElegido = selectRolElement ? selectRolElement.value : "";
-
+    // Validación rápida antes de enviar al backend
     if (!rolElegido) {
-      msjRegistro.innerHTML = `<div class="alert alert-danger">Por favor, seleccione un tipo de usuario.</div>`;
+      msjRegistro.innerHTML = `
+        <div class="alert alert-warning mt-2">
+          Por favor, selecciona si eres "Ciudadano" o "Representante de Institución" arriba.
+        </div>`;
       return;
     }
 
-    // Estructura base leyéndola directamente por los ID que definiste
-    let nuevoUsuario = {
-      id: Date.now(),
+    // 2. Construimos el objeto exacto que espera tu controlador
+    const datosRegistro = {
       nombre: document.getElementById("nombre").value.trim(),
       apellido: document.getElementById("apellido").value.trim(),
       email: document.getElementById("email").value.trim(),
       password: document.getElementById("password").value,
-      rol: rolElegido,
+      rol: rolElegido, // <-- Se envía 'ciudadano' o 'representante'
+      dni: document.getElementById("dni")
+        ? document.getElementById("dni").value.trim()
+        : null,
+      direccion: document.getElementById("address")
+        ? document.getElementById("address").value.trim()
+        : null,
     };
 
-    // Validaciones e inserciones cruzadas de datos según rol
-    if (rolElegido === "ciudadano") {
-      const dniIngresado = document.getElementById("dni").value.trim();
+    try {
+      const respuesta = await fetch("http://localhost:3000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(datosRegistro),
+      });
 
-      const existeDni = listaUsuarios.some(
-        (u) => u.rol === "ciudadano" && String(u.dni) === dniIngresado,
-      );
-      if (existeDni) {
-        msjRegistro.innerHTML = `<div class="alert alert-danger mt-2">Error: Ya existe una persona registrada con el DNI ingresado.</div>`;
-        return;
+      const data = await respuesta.json();
+
+      if (respuesta.ok) {
+        msjRegistro.innerHTML = `
+          <div class="alert alert-success mt-2">
+            ¡Registro completado con éxito! Redirigiendo...
+          </div>`;
+        formRegistro.reset();
+
+        setTimeout(() => {
+          window.location.href = "login.html";
+        }, 2000);
+      } else {
+        // Mostramos el mensaje exacto que nos envía el backend
+        msjRegistro.innerHTML = `
+          <div class="alert alert-danger mt-2">${data.mensaje}</div>`;
       }
-      nuevoUsuario.dni = dniIngresado;
-      nuevoUsuario.direccion = document.getElementById("address").value.trim();
-    } else if (rolElegido === "representante") {
-      const cuitIngresado = document.getElementById("cuit").value.trim();
-
-      const existeCuit = listaUsuarios.some(
-        (u) => u.rol === "representante" && u.cuit === cuitIngresado,
-      );
-      if (existeCuit) {
-        msjRegistro.innerHTML = `<div class="alert alert-danger mt-2">Error: Ya existe un organismo registrado con este CUIT.</div>`;
-        return;
-      }
-      nuevoUsuario.nombreInstitucion = document
-        .getElementById("institucionNombre")
-        .value.trim();
-      nuevoUsuario.cuit = cuitIngresado;
+    } catch (error) {
+      console.error("Error al registrar:", error);
+      msjRegistro.innerHTML = `
+        <div class="alert alert-danger mt-2">
+          No se pudo conectar con el servidor backend.
+        </div>`;
     }
-
-    // Validación general de correo único
-    const existeEmail = listaUsuarios.some(
-      (u) => u.email === nuevoUsuario.email,
-    );
-    if (existeEmail) {
-      msjRegistro.innerHTML = `<div class="alert alert-danger mt-2">Error: El correo electrónico ya se encuentra registrado.</div>`;
-      return;
-    }
-
-    // Guardado final en LocalStorage
-    listaUsuarios.push(nuevoUsuario);
-    localStorage.setItem("usuarios", JSON.stringify(listaUsuarios));
-
-    // Éxito, Limpieza y Redirección suave
-    msjRegistro.innerHTML = `<div class="alert alert-success mt-2">¡Registro completado con éxito! Redirigiendo...</div>`;
-    formRegistro.reset();
-
-    // Ocultamos el bloque grande del formulario para que quede limpio de nuevo
-    if (camposFormulario) camposFormulario.classList.add("d-none");
-    if (camposCiudadano) camposCiudadano.classList.add("d-none");
-    if (camposInstitucion) camposInstitucion.classList.add("d-none");
-
-    setTimeout(() => {
-      window.location.href = "login.html";
-    }, 2000);
   });
 }
