@@ -1,6 +1,7 @@
 
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
+import { institucionesModel } from "./instituciones.model.js";
 export const cursosModel = sequelize.define("cursos", {
   id: {
     type: DataTypes.INTEGER,
@@ -39,5 +40,5 @@ export const cursosModel = sequelize.define("cursos", {
   tableName: "cursos",
   timestamps: true,
   createdAt: "created_at",
-  updateAt:"update_At",
+  updateAt:"update_at",
 });

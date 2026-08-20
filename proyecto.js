@@ -3,9 +3,16 @@ import { sequelize, startDataBase } from "./src/config/database.js";
 import { cursosModel } from "./src/models/cursos.model.js";
 import { institucionesModel } from "./src/models/instituciones.model.js";
 import { representanteInstituModel } from "./src/models/representante_institucion.model.js";
+import { cursosRoutes } from "./src/routes/cursos.routes.js";
+import { institucionRouter } from "./src/routes/instituciones.routes.js";
+import { representanteIntiRouter } from "./src/routes/representante_institucion.routes.js";
 const app = express();
 const PORT = 3000;
 app.use(express.json());
+
+  app.use('/api',cursosRoutes);
+  app.use('/api',institucionRouter);
+  app.use('/api', representanteIntiRouter);
 const probarBaseDatos = async () => {
   try {
     await sequelize.sync({force:false});
@@ -19,6 +26,7 @@ const probarBaseDatos = async () => {
 app.listen(PORT, async () => {
   await probarBaseDatos();
   await startDataBase();
+
   console.log(`servidor funcionando en el puerto ${PORT}`);
   console.log(`Servidor: http://localhost:${PORT}`);
 });
